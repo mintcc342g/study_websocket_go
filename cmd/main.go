@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-redis/redis"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -22,13 +23,14 @@ const (
 		"   |___/   _|_|_   \\___/   |___/   _|_|_   TS__[O]  \\_/\\_/  |___|   |___/   |___/   \\___/   \\___|  |_|\\_\\   |___|   _|_|_   TS__[O]  \\___|   \\___/  \n" +
 		" _|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_| \"\"\" | {======|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"|_|\"\"\"\"\"| {======|_|\"\"\"\"\"|_|\"\"\"\"\"| \n" +
 		" \"`-0-0-'\"`-0-0-'\"`-0-0-'\"`-0-0-'\"`-0-0-'./o--000'\"`-0-0-'\"`-0-0-'\"`-0-0-'\"`-0-0-'\"`-0-0-'\"`-0-0-'\"`-0-0-'\"`-0-0-'\"`-0-0-'./o--000'\"`-0-0-'\"`-0-0-' \n\n" +
-		" => Starting listen %s\n"
+		"⇨ Starting listen %s\n"
 )
 
 func main() {
 	studyWS := conf.StudyWS
-	e := echoInit(studyWS)
-	signal := sigInit(e)
+	e := initEcho(studyWS)
+	signal := initSignal(e)
+	_ = initRedis(studyWS) // TODO: redis client
 
 	if err := initHandler(studyWS, e, signal); err != nil {
 		e.Logger.Error("InitHandler Error")
@@ -38,7 +40,7 @@ func main() {
 	startServer(studyWS, e)
 }
 
-func echoInit(studyWS *conf.ViperConfig) (e *echo.Echo) {
+func initEcho(studyWS *conf.ViperConfig) (e *echo.Echo) {
 	e = echo.New()
 
 	// Middleware
@@ -56,7 +58,7 @@ func echoInit(studyWS *conf.ViperConfig) (e *echo.Echo) {
 	return e
 }
 
-func sigInit(e *echo.Echo) chan os.Signal {
+func initSignal(e *echo.Echo) chan os.Signal {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit,
 		syscall.SIGINT,
@@ -78,6 +80,16 @@ func sigInit(e *echo.Echo) chan os.Signal {
 	return quit
 }
 
+func initRedis(studyWS *conf.ViperConfig) *redis.Client {
+	host := studyWS.GetString("redis_host")
+	fmt.Println("⇨ Init Redis", "host", host) // TODO: logger
+	return redis.NewClient(&redis.Options{
+		Addr:     host,
+		Password: "",
+		DB:       0,
+	})
+}
+
 func startServer(studyWS *conf.ViperConfig, e *echo.Echo) {
 	// Start Server
 	apiServer := fmt.Sprintf("0.0.0.0:%d", studyWS.GetInt("port"))
@@ -90,10 +102,10 @@ func startServer(studyWS *conf.ViperConfig, e *echo.Echo) {
 }
 
 func initHandler(studyGoroutine *conf.ViperConfig, e *echo.Echo, signal <-chan os.Signal) error {
-	// ws
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
+	// ws
 	e.GET("/ws", ws.Hello)
 
 	return nil

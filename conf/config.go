@@ -1,6 +1,8 @@
 package conf
 
 import (
+	"fmt"
+
 	"github.com/spf13/viper"
 )
 
@@ -23,6 +25,18 @@ func readConfig(defaults map[string]interface{}) *ViperConfig {
 	v := viper.New()
 	for key, value := range defaults {
 		v.SetDefault(key, value)
+	}
+
+	v.AddConfigPath("./conf") // TODO: check to work in docker
+
+	v.AutomaticEnv()
+
+	v.SetConfigName(".env.dev")
+
+	err := v.ReadInConfig()
+	if err != nil {
+		fmt.Println("conf", "readConfig", "Error", err) // TODO: logger
+		return nil
 	}
 
 	return &ViperConfig{
