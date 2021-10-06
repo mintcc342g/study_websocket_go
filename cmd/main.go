@@ -30,9 +30,9 @@ func main() {
 	studyWS := conf.StudyWS
 	e := initEcho(studyWS)
 	signal := initSignal(e)
-	_ = initRedis(studyWS) // TODO: redis client
+	rc := initRedis(studyWS) // TODO: redis client
 
-	if err := initHandler(studyWS, e, signal); err != nil {
+	if err := initHandler(studyWS, e, rc, signal); err != nil {
 		e.Logger.Error("InitHandler Error")
 		os.Exit(1)
 	}
@@ -101,12 +101,17 @@ func startServer(studyWS *conf.ViperConfig, e *echo.Echo) {
 	}
 }
 
-func initHandler(studyGoroutine *conf.ViperConfig, e *echo.Echo, signal <-chan os.Signal) error {
+func initHandler(studyGoroutine *conf.ViperConfig, e *echo.Echo, rc *redis.Client, signal <-chan os.Signal) error {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
+	wsHandler := &ws.WebSocketHandler{
+		RedisClient: rc,
+	}
+
 	// ws
 	e.GET("/ws", ws.Hello)
+	e.GET("/room/:roomID/broadcast", wsHandler.ListenBroadcast)
 
 	return nil
 }

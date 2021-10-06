@@ -7,10 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-var (
-	upgrader = websocket.Upgrader{}
-)
-
+// Hello ...
 func Hello(c echo.Context) error {
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
