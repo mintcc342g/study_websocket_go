@@ -105,9 +105,7 @@ func initHandler(studyGoroutine *conf.ViperConfig, e *echo.Echo, rc *redis.Clien
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	wsHandler := &ws.WebSocketHandler{
-		RedisClient: rc,
-	}
+	wsHandler := ws.NewWebSocketHandler(rc)
 
 	// ws
 	e.GET("/ws", ws.Hello)

@@ -3,7 +3,6 @@ package ws
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/go-redis/redis"
 	"github.com/gorilla/websocket"
@@ -16,7 +15,16 @@ var (
 
 // WebSocketHandler ...
 type WebSocketHandler struct {
-	RedisClient *redis.Client
+	rc    *redis.Client
+	rooms map[string]*Room
+}
+
+// NewWebSocketHandler ...
+func NewWebSocketHandler(rc *redis.Client) *WebSocketHandler {
+	return &WebSocketHandler{
+		rc:    rc,
+		rooms: make(map[string]*Room),
+	}
 }
 
 // ListenBroadcast ...
@@ -31,39 +39,27 @@ func (h *WebSocketHandler) ListenBroadcast(c echo.Context) error {
 	}
 	defer wsConn.Close()
 
-	// TODO: need to create ping/pong methods
-
 	roomID := c.Param("roomID")
 	if roomID == "" {
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"result_message": err.Error()})
+		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"result_message": "invalid room_id"}) // TODO: set response format
 	}
 
-	// TODO: needs an entering method
-	pubsub := h.RedisClient.Subscribe(roomID)
-
-	_, err = pubsub.Receive()
-	if err != nil {
-		fmt.Println("ws", "WebSocketHandler", "ListenBroadcast", "Receive", "Error", err) // TODO: logger
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"result_message": err.Error()})
+	userName := c.QueryParam("user_name")
+	if userName == "" {
+		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"result_message": "need a user_name"})
 	}
 
-	ch := pubsub.Channel()
+	// TODO: need to check the roomID and userName whether they exist in a db or not
 
-	// TODO: needs a writing method
-	err = h.RedisClient.Publish(roomID, "hello").Err()
-	if err != nil {
-		fmt.Println("ws", "WebSocketHandler", "ListenBroadcast", "Publish", "Error", err) // TODO: logger
-		return c.JSON(http.StatusInternalServerError, map[string]interface{}{"result_message": err.Error()})
+	var room *Room
+	var ok bool
+	if room, ok = h.rooms[roomID]; !ok { // TODO: prevent that clients would create the same room at the same time
+		room = MakeRoom(roomID, h.rc)
+		h.rooms = map[string]*Room{roomID: room} // TODO: delete room when the room deleted from a db or all clients left the room
 	}
 
-	time.AfterFunc(time.Second, func() {
-		_ = pubsub.Close()
-	})
-
-	// TODO: needs a reading method
-	for msg := range ch {
-		fmt.Println(msg.Channel, msg.Payload)
-	}
+	client := NewClient(wsConn, room, userName)
+	client.Enter()
 
 	return nil
 }
