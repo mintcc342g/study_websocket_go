@@ -37,7 +37,6 @@ func (h *WebSocketHandler) ListenBroadcast(c echo.Context) error {
 		fmt.Println("ws", "WebSocketHandler", "Upgrade", "Error", err) // TODO: logger
 		return err
 	}
-	defer wsConn.Close()
 
 	roomID := c.Param("roomID")
 	if roomID == "" {
@@ -51,15 +50,21 @@ func (h *WebSocketHandler) ListenBroadcast(c echo.Context) error {
 
 	// TODO: need to check the roomID and userName whether they exist in a db or not
 
-	var room *Room
-	var ok bool
-	if room, ok = h.rooms[roomID]; !ok { // TODO: prevent that clients would create the same room at the same time
-		room = MakeRoom(roomID, h.rc)
-		h.rooms = map[string]*Room{roomID: room} // TODO: delete room when the room deleted from a db or all clients left the room
-	}
+	room := h.makeRoom(roomID)
 
 	client := NewClient(wsConn, room, userName)
 	client.Enter()
 
 	return nil
+}
+
+func (h *WebSocketHandler) makeRoom(roomID string) (room *Room) {
+	var ok bool
+
+	if room, ok = h.rooms[roomID]; !ok { // TODO: prevent that clients would create the same room at the same time
+		room = MakeRoom(roomID, h.rc)
+		h.rooms = map[string]*Room{roomID: room} // TODO: remove the room from the map when the room deleted from a db or all clients left the room
+	}
+
+	return
 }

@@ -2,7 +2,6 @@ package ws
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/go-redis/redis"
 )
@@ -22,12 +21,13 @@ type Room struct {
 }
 
 // MakeRoom ...
-func MakeRoom(roomID string, rc *redis.Client) *Room {
-	room := newRoom(roomID, rc)
-	fmt.Println("ws", "Room", "New Room Created", "RoomID", roomID)
+func MakeRoom(roomID string, rc *redis.Client) (room *Room) {
+	room = newRoom(roomID, rc)
+	fmt.Println("ws", "Room", "New Room Created", "Room", room) // TODO: logger
+
 	go room.run()
 
-	return room
+	return
 }
 
 // newRoom ...
@@ -51,28 +51,29 @@ func (r *Room) run() {
 			r.clients[client] = true
 			go client.Subscribe(done)
 
-			go func() { // TODO: delete these temporal codes after creating read/writePump methods
-				time.Sleep(60 * time.Second)
-				r.unregister <- client
-			}()
-
 		case client := <-r.unregister:
-			if _, ok := r.clients[client]; ok {
-				close(client.pipe)
-				delete(r.clients, client)
-				done <- struct{}{}
-				fmt.Println("ws", "Room", "run", "unregister client", client.nickname) // TODO: logger
-			}
+			r.unregisterClient(client, done)
 
-		case message := <-r.broadcast:
-			for client := range r.clients {
-				select {
-				case client.pipe <- message:
-				default:
-					close(client.pipe)
-					delete(r.clients, client)
-				}
-			}
+		case msg := <-r.broadcast:
+			r.publish(msg)
 		}
+	}
+}
+
+// publish ...
+func (r *Room) publish(msg []byte) (err error) {
+	if err = r.rc.Publish(r.channel, msg).Err(); err != nil {
+		fmt.Println("ws", "Room", "publish", "err", err) // TODO: logger
+	}
+	return
+}
+
+// unregisterClient ...
+func (r *Room) unregisterClient(client *Client, done chan struct{}) {
+	if _, ok := r.clients[client]; ok {
+		close(client.pipe)
+		delete(r.clients, client)
+		done <- struct{}{}
+		fmt.Println("ws", "Room", "run", "unregister client", client.nickname) // TODO: logger
 	}
 }
