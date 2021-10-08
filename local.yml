@@ -1,0 +1,15 @@
+version: '3'
+services:
+  ws_server:
+    build: .
+    deploy:
+      mode: replicated
+      replicas: 2
+    environment:
+      - REDIS_HOST=redis:6379
+    ports:
+      - 10101-10102:10812
+  redis:
+    image: redis:latest
+    ports:
+      - 16379:16379
