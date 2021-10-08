@@ -51,7 +51,7 @@ func (c *Client) Enter() {
 }
 
 // readPump pumps messages from the websocket connection to the room.
-// See https://github.com/gorilla/websocket/blob/e8629af678b7fe13f35dff5e197de93b4148a909/examples/chat/client.go#L56
+// See https://github.com/gorilla/websocket.
 func (c *Client) readPump() {
 	defer func() {
 		c.room.unregister <- c
@@ -71,14 +71,18 @@ func (c *Client) readPump() {
 			break
 		}
 
-		c.broadcast(message) // NOTE: msg's trip ... ws -> client.room.broadcast -> redis pub/sub -> many c.pipe -> ws
+		c.broadcast(message) // NOTE: msg's trip ... client server -> client.room.broadcast -> redis pub/sub -> many client.pipe -> clients servers
 	}
 }
 
 // writePump pumps messages from the room to the websocket connection.
-// See https://github.com/gorilla/websocket/blob/e8629af678b7fe13f35dff5e197de93b4148a909/examples/chat/client.go#L82
+// See https://github.com/gorilla/websocket.
 func (c *Client) writePump() {
-	ticker := time.NewTicker(pingPeriod) // fixme: 왜 ticker 가 여기에서만 필요할까?
+	ticker := time.NewTicker(pingPeriod)
+	// NOTE: This ticker is needed to send 'ping' to a client server from our server.
+	// The client server would send a 'pong' if they get the 'ping' signal from ours.
+	// Then, our server could get the 'pong' sent by the client at the c.readPump().
+
 	defer func() {
 		ticker.Stop()
 		c.conn.Close()
@@ -116,12 +120,11 @@ func (c *Client) Subscribe(done <-chan struct{}) {
 	ch := pubsub.Channel()
 	go c.handleMsg(ch)
 
-	<-done // NOTE: a pubsub channel for a client will be closed when struct{}{} be passed to the done go channel
+	<-done // NOTE: a pubsub channel for a client will be closed when struct{}{} be passed to the done channel
 	err := pubsub.Close()
 	fmt.Println("ws", "Client", "Subscribe", "closed pubsub channel", "err", err) // TODO: logger
 }
 
-// broadcast ...
 func (c *Client) broadcast(msg []byte) {
 	c.room.broadcast <- msg
 }

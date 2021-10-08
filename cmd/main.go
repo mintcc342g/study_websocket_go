@@ -108,8 +108,7 @@ func initHandler(studyGoroutine *conf.ViperConfig, e *echo.Echo, rc *redis.Clien
 	wsHandler := ws.NewWebSocketHandler(rc)
 
 	// ws
-	e.GET("/ws", ws.Hello)
-	e.GET("/room/:roomID/broadcast", wsHandler.ListenBroadcast)
+	e.GET("/room/:roomID/broadcast", wsHandler.BroadcastChat)
 
 	return nil
 }

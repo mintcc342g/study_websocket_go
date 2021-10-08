@@ -27,14 +27,14 @@ func NewWebSocketHandler(rc *redis.Client) *WebSocketHandler {
 	}
 }
 
-// ListenBroadcast ...
-func (h *WebSocketHandler) ListenBroadcast(c echo.Context) error {
+// BroadcastChat ...
+func (h *WebSocketHandler) BroadcastChat(c echo.Context) error {
 
 	// TODO: authentication
 
 	wsConn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
-		fmt.Println("ws", "WebSocketHandler", "Upgrade", "Error", err) // TODO: logger
+		fmt.Println("ws", "WebSocketHandler", "BroadcastChat", "Upgrade", "Error", err) // TODO: logger
 		return err
 	}
 
