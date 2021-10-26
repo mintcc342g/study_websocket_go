@@ -3,7 +3,7 @@
 * Go: 1.16
 
 ```
-## run using docker
+## run server using docker
 $ run_server.sh
 
 
