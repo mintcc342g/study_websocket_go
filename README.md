@@ -2,20 +2,21 @@
 
 * Go: 1.16
 
+## run server
+- for MacOS
 ```
-## run server using docker
+## case1: using the .sh file which contains docker commands.
 $ run_server.sh
 
 
-## run each server
-
-# 1) run redis
+## case2: run each commands, not use docker for the app server
+# case2-1) run redis
 $ docker run -p 6379:6379 redis 
 
-# 2) compile the ws server
+# case2-2) compile the ws server
 $ make all
 
-# 3) run the ws server
+# case2-3) run the ws server
 $ bin/study_websocket_go
 ```
 
