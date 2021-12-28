@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"study_websocket_go/conf"
-	"study_websocket_go/ws"
+	"study-websocket-go/conf"
+	"study-websocket-go/ws"
 	"syscall"
 	"time"
 

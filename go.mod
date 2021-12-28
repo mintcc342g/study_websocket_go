@@ -1,4 +1,4 @@
-module study_websocket_go
+module study-websocket-go
 
 go 1.16
 

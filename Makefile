@@ -1,4 +1,4 @@
-PACKAGE = study_websocket_go
+PACKAGE = study-websocket-go
 BUILDPATH ?= $(CURDIR)
 BASE	= $(BUILDPATH)
 BIN		= $(BASE)/bin
