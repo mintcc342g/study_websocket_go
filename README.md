@@ -31,9 +31,9 @@ $ bin/study-websocket-go
 
 ## Chat Test with Postman
 
-- Need to install Postman
-- Create New WebSoket Requests.
-- Set Request URL and Query Strings.
+- Before test, you need to install Postman.
+- Create new webSoket requests on Postman.
+- Set request URL and query strings on the requests you created.
   ```Makefile
   # Format
   ws://{{localhost}}:{{port}}/room/{{room_id}}/broadcast?user_name="{{nick_name}}"
@@ -46,4 +46,4 @@ $ bin/study-websocket-go
   ws://localhost:10812/room/123/broadcast?user_name="iKnow"
 
   ```
-- Click 'Connect' button, and Enjoy it!
+- Click 'Connect' button on the requests, and Enjoy it!
