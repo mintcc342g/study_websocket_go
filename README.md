@@ -1,6 +1,7 @@
 # Study Websocket with Golang and Gorilla
 
 * Go: 1.16
+* Gorilla Websocket: v1.4.2
 
 <br/>
 
